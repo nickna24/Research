@@ -1,11 +1,11 @@
-# 🚢 Titanic ML Pipeline with HTCondor DAGMan
+# Example Titanic ML Pipeline with HTCondor DAGMan
 
 This project demonstrates how to structure a **machine learning workflow** using **HTCondor DAGMan**, with the [Titanic dataset](https://www.kaggle.com/c/titanic).  
-It serves as a lightweight skeleton for modular ML pipelines — similar to autonomous vehicle or GAN workflows — showing how to chain preprocessing, training, and evaluation jobs via DAG dependencies.
+It serves as a lightweight skeleton for modular ML pipelines and shows how to chain preprocessing, training, and evaluation jobs via DAG dependencies. For the sake of demonstration, I'm using a 3-layer feedforward neural network (MLP). 
 
 ---
 
-## 🧩 Pipeline Overview
+## Pipeline Overview
 
 | Stage | Script | Purpose | Output |
 |-------|---------|----------|---------|
@@ -19,15 +19,16 @@ Each stage runs as its own Condor job, chained by DAGMan.
 
 ## Directory Structure
 
+```pgsql
 titanic_dagman_project/
 ├── data/
 │ ├── train.csv
 │ ├── test.csv
 │ └── preprocessed/
-│ ├── train_proc.npy
-│ ├── test_proc.npy
-│ ├── labels.npy
-│ └── meta.json
+│ ├───── train_proc.npy
+│ ├───── test_proc.npy
+│ ├───── labels.npy
+│ └───── meta.json
 ├── scripts/
 │ ├── preprocess_data.py
 │ ├── train_model.py
@@ -41,9 +42,9 @@ titanic_dagman_project/
 ├── out/
 ├── err/
 └── workflow.dag
+```
 
-
-## 🔄 DAG Workflow
+## DAG Workflow
 
 ### `workflow.dag`
 ```dag
@@ -75,29 +76,29 @@ PREPROC → TRAIN(Adam, SGD) → EVAL(Adam, SGD)
 ###  Model & Hyperparameters
 A 3-layer MLP for binary classification (Survived vs Not Survived):
 
-python
-```
+```python
 nn.Linear(in_dim, 64) → ReLU → nn.Linear(64, 32) → ReLU → nn.Linear(32, 1)
 ```
 ### Arguments passed from Condor submit files:
 
-Arg	Description	Example
---optimizer	Optimizer type	adam, sgd
---lr	Learning rate	0.001, 0.01
---w_pred	Weight for BCE loss	1.0
---w_const	Weight for L2 regularization	0.0005
---checkpoint_path	Path to save model	checkpoints/model_adam_0.001.pt
+| Argument | Description | Example |
+|-----------|--------------|----------|
+| `--optimizer` | Optimizer type | `adam`, `sgd` |
+| `--lr` | Learning rate | `0.001`, `0.01` |
+| `--w_pred` | Weight for BCE loss | `1.0` |
+| `--w_const` | Weight for L2 regularization | `0.0005` |
+| `--checkpoint_path` | Path to save model | `checkpoints/model_adam_0.001.pt` |
 
 ### Checkpoints
 Each training job outputs:
 
-php-template
-Copy code
+
+```php-template
 checkpoints/model_<OPT>_<LR>.pt
+```
 Each checkpoint stores:
 
-python
-```
+```python
 {
   "state_dict": model weights,
   "meta": {
@@ -120,24 +121,27 @@ Evaluation jobs read this file to compute metrics.
 ### Evaluation Outputs
 Each EVAL job produces:
 
-File	Location	Description
-metrics_$(OPT)_$(LR).txt	logs/	Validation loss & accuracy
-submission.csv	logs/	Optional Kaggle-style predictions
-.out, .err, .log	out/, err/, logs/	Condor job outputs
+| File | Location | Description |
+|------|-----------|--------------|
+| `metrics_$(OPT)_$(LR).txt` | `logs/` | Validation loss & accuracy |
+| `submission.csv` | `logs/` | Optional Kaggle-style predictions |
+| `.out`, `.err`, `.log` | `out/`, `err/`, `logs/` | Condor job outputs |
 
 Example metric file:
 
-makefile
-Copy code
+```makefile
 val_loss: 0.451623
 val_acc: 0.892857
-⚙️ GPU Configuration
+```
+
+### GPU Configuration
 Both training and evaluation jobs request one GPU:
 
-sub
-Copy code
+```sub
 request_gpus = 1
 requirements = (CUDADeviceName =!= UNDEFINED)
+```
+
 Each job uses:
 
 1 CPU core
@@ -146,20 +150,17 @@ Each job uses:
 
 2 GB RAM
 
-Remove GPU lines if your pool has only CPUs.
 
 ### Running the Workflow
 From the project root:
 
-bash
-```
+```bash
 condor_submit_dag workflow.dag
 ```
 
 Monitor progress:
 
-bash
-```
+```bash
 condor_q
 condor_q -dag
 ```
@@ -172,15 +173,14 @@ checkpoints/ — trained model files
 
 out/ & err/ — stdout/stderr for Condor jobs
 
-📚 Artifact Flow
+### Artifact Flow
 Stage	Input	Output
 Preprocess	Raw CSVs	.npy files + meta.json
 Train	Preprocessed data	.pt checkpoint
 Evaluate	Checkpoint	Metrics + submission CSV
 
 ### Example Output Tree
-pgsql
-Copy code
+```pgsql
 checkpoints/
 ├── model_adam_0.001.pt
 ├── model_sgd_0.01.pt
@@ -200,6 +200,7 @@ out/
 err/
 ├── train_adam_0.001.err
 └── eval_adam_0.001.err
+```
 
 ### Extending the Pipeline
 Add sweeps: create new TRAIN + EVAL pairs in workflow.dag.
