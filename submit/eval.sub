@@ -1,0 +1,12 @@
+executable   = /usr/bin/python3
+arguments    = scripts/evaluate_model.py --checkpoint_path checkpoints/model_$(OPT)_$(LR).pt --metrics_out logs/metrics_$(OPT)_$(LR).txt --write_submission
+
+log          = logs/eval_$(OPT)_$(LR).log
+output       = out/eval_$(OPT)_$(LR).out
+error        = err/eval_$(OPT)_$(LR).err
+
+request_cpus   = 1
+request_memory = 1GB
+request_gpus   = 1
+requirements = (CUDADeviceName =!= UNDEFINED)
+queue

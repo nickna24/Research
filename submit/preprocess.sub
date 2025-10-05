@@ -1,0 +1,10 @@
+executable   = /usr/bin/python3
+arguments    = scripts/preprocess_data.py --train_csv data/train.csv --test_csv data/test.csv --out_dir data/preprocessed
+
+log          = logs/preprocess.log
+output       = out/preprocess.out
+error        = err/preprocess.err
+
+request_cpus   = 1
+request_memory = 1GB
+queue

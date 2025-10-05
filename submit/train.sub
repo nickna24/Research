@@ -1,0 +1,13 @@
+executable   = /usr/bin/python3
+arguments    = scripts/train_model.py --optimizer $(OPT) --lr $(LR) --w_pred $(WPRED) --w_const $(WCONST) --checkpoint_path checkpoints/model_$(OPT)_$(LR).pt --epochs 15 --batch_size 512 --save_submission True
+
+log          = logs/train_$(OPT)_$(LR).log
+output       = out/train_$(OPT)_$(LR).out
+error        = err/train_$(OPT)_$(LR).err
+
+request_cpus   = 1
+request_memory = 2GB
+request_gpus   = 1
+# Tweak as needed for your cluster’s GPU resource ads:
+requirements = (CUDADeviceName =!= UNDEFINED)
+queue

@@ -1,0 +1,21 @@
+# --- Stage 1: Preprocess ---
+JOB PREPROC submit/preprocess.sub
+
+# --- Stage 2: Train ---
+JOB TRAIN1 submit/train.sub
+VARS TRAIN1 OPT="adam" LR="0.001" WPRED="1.0" WCONST="0.0005"
+
+JOB TRAIN2 submit/train.sub
+VARS TRAIN2 OPT="sgd" LR="0.01" WPRED="1.0" WCONST="0.0005"
+
+PARENT PREPROC CHILD TRAIN1 TRAIN2
+
+# --- Stage 3: Evaluate ---
+JOB EVAL1 submit/eval.sub
+VARS EVAL1 OPT="adam" LR="0.001"
+
+JOB EVAL2 submit/eval.sub
+VARS EVAL2 OPT="sgd" LR="0.01"
+
+PARENT TRAIN1 CHILD EVAL1
+PARENT TRAIN2 CHILD EVAL2
